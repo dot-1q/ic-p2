@@ -19,6 +19,7 @@ class BitStream
         if (op == 'r')
         {
             this->fileStream.open(file,ios::in);
+            // Find how many bytes are in the file to be read, so that we can keep track on wich to read
             this->fileStream.ignore( std::numeric_limits<std::streamsize>::max() );
             fileByteSize = this->fileStream.gcount();
             this->fileStream.clear();   //  Since ignore will have set eof.
@@ -62,11 +63,16 @@ void BitStream::writeBit(unsigned char bit)
 
 unsigned char BitStream::readBit()
 {
+    // get on the byte buffer the correct byte from the file
     setByteOnBuffer();
+    // get the "nth" bit from the byte with this formula
     char out = (this->byteBuffer >> this->bitCounter) & 0x01;
+    // increment the bit read
     this->bitCounter++;
+    // If we've internally read 8 bits, means we've read a whole byte
     if(this->bitCounter==8)
     {
+        // so we update the bitcounter variable and the byte counter accordingly 
         this->bitCounter = 0; 
         this->byteCounter++;
     }
@@ -89,7 +95,9 @@ unsigned char BitStream::readNBits()
 
 void BitStream::setByteOnBuffer()
 {
+    // Get the byte from the file thats currently being read bit by bit 
     this->byteBuffer = fileStream.get();
+    // seekg(n) puts the internal file pointer on the "nth" byte. This "nth" byte is updated internally as we read bit by bit 
     fileStream.seekg(this->byteCounter);
 }
 
