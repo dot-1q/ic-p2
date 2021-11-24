@@ -9,7 +9,7 @@ class BitStream
 {
     fstream fileStream;
     char byteBuffer = 0x00;
-    int bitCounter = 0;
+    short bitCounter = 0;
     int byteCounter = 0;
     int fileByteSize=0;
     
@@ -36,8 +36,8 @@ class BitStream
     };
     public:
         void writeBit(unsigned char bit);
-        unsigned char readBit();
         void writeNBits(int n, char *charArray);
+        unsigned char readBit();
         void readNBits();
         void close();
     private:
@@ -46,17 +46,15 @@ class BitStream
 
 void BitStream::writeBit(unsigned char bit)
 {
-    if (bit == '0') 
+    // if the bit to be written is a 0, we simply shift the buffer one position
+    if (bit == 0x00) this->byteBuffer = this->byteBuffer << 1;
+    // if the bit is a 1, we shift and bitwise OR to force the LSB to be 1
+    else if (bit==0x01) this->byteBuffer = (this->byteBuffer << 1 ) | 0x01;
+    //increment number of bits written
+    this->bitCounter++;
+    // when we write a whole byte (8 bits) we write the buffer on the file
+    if(bitCounter == 8)
     {
-        this->byteBuffer = this->byteBuffer << 1;
-        this->bitCounter++;
-    }
-    else 
-    {
-        this->byteBuffer = (this->byteBuffer << 1 ) | 0x1;
-        this->bitCounter++;
-    }
-    if(bitCounter == 8){
         this->fileStream << byteBuffer;
         this->bitCounter=0;
     } 
@@ -77,13 +75,8 @@ unsigned char BitStream::readBit()
         this->bitCounter = 0; 
         this->byteCounter++;
     }
-    if (out==0x00) 
-    {
-        return '0';
-    }else 
-    {
-        return '1';
-    }
+    // out will be either 0x00 (0) or 0x01(1)
+    return out;
 }
 
 void BitStream::writeNBits(int n, char *charArray)
@@ -94,12 +87,9 @@ void BitStream::writeNBits(int n, char *charArray)
             // get the "nth" bit from the byte with this formula
             // We are writing from MSB to LSB, hence why  we mask with "0x80"
             unsigned char byteToWrite = (charArray[i] << bit) & 0x80;
-
             // The bit is stored in the MSB of the previous variabe, so we shift it 
-            // 7 places, so that the bit we care is on LSB
-            // After that, we call the writeBit method with the correct bit
-            if((byteToWrite>>7)==0x00) this->writeBit('0');
-            if((byteToWrite>>7)==0x01) this->writeBit('1');
+            // 7 places, so that the bit we care is on LSB, and call writeBit
+            this->writeBit(byteToWrite>>7);
         }
     }
 }
