@@ -59,4 +59,13 @@ int main()
     out = bs2.readBit();
     cout  << out << endl;
     bs2.close();
+
+
+
+    BitStream bs3("nbits.bits",'w');
+
+    char array[5] = {'a','b','c','d','e'};
+    cout << array[1] << endl;
+    
+    bs3.writeNBits(5,array);
 }

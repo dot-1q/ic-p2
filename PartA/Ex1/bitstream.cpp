@@ -37,10 +37,11 @@ class BitStream
     public:
         void writeBit(unsigned char bit);
         unsigned char readBit();
-        void writeNBits(unsigned char buffer);
-        unsigned char readNBits();
-        void setByteOnBuffer();
+        void writeNBits(int n, char *charArray);
+        void readNBits();
         void close();
+    private:
+        void setByteOnBuffer();
 };
 
 void BitStream::writeBit(unsigned char bit)
@@ -85,11 +86,25 @@ unsigned char BitStream::readBit()
     }
 }
 
-void BitStream::writeNBits(unsigned char buffer)
+void BitStream::writeNBits(int n, char *charArray)
 {
+    for (int i=0; i<n; i++) {
+        for(int bit=0;bit<8;bit++)
+        {
+            // get the "nth" bit from the byte with this formula
+            // We are writing from MSB to LSB, hence why  we mask with "0x80"
+            unsigned char byteToWrite = (charArray[i] << bit) & 0x80;
+
+            // The bit is stored in the MSB of the previous variabe, so we shift it 
+            // 7 places, so that the bit we care is on LSB
+            // After that, we call the writeBit method with the correct bit
+            if((byteToWrite>>7)==0x00) this->writeBit('0');
+            if((byteToWrite>>7)==0x01) this->writeBit('1');
+        }
+    }
 }
 
-unsigned char BitStream::readNBits()
+void BitStream::readNBits()
 {    
 }
 
