@@ -1,24 +1,26 @@
-#include <cstdio>
 #include <iostream>
 #include <limits>
 #include <fstream>
+#include <bitset>
 
-using namespace std;
 
 class BitStream 
 {
-    fstream fileStream;
-    char byteBuffer = 0x00;
-    short bitCounter = 0;
-    int byteCounter = 0;
+    std::fstream fileStream;
+    char operation=0x00;
+    char byteBuffer=0x00;
+    short bitCounter=0;
+    int byteCounter=0;
     int fileByteSize=0;
-    
+
+    // PUBLIC METHODS // 
     public:
-    BitStream(const string &file, char op)
+    BitStream(const std::string file, char op)
     {
         if (op == 'r')
         {
-            this->fileStream.open(file,ios::in);
+            this->operation = op;
+            this->fileStream.open(file,std::ios::in);
             // Find how many bytes are in the file to be read, so that we can keep track on wich to read
             this->fileStream.ignore( std::numeric_limits<std::streamsize>::max() );
             fileByteSize = this->fileStream.gcount();
@@ -27,21 +29,26 @@ class BitStream
         }
         else if (op == 'w')
         {
-            this->fileStream.open(file,ios::out);
+            this->operation = op;
+            this->fileStream.open(file,std::ios::out);
         }
         else{
-            cout << " MODO DE UTILIZAÇÂO: BitStream('filename','r/w')" << endl;
+            std::cout << " MODO DE UTILIZAÇÂO: BitStream('filename','r/w')" << std::endl;
         }
 
     };
-    public:
         void writeBit(unsigned char bit);
-        void writeNBits(int n, char *charArray);
+        void writeNBits(int n, char character);
+        void writeCharArray(int n, char* charArray);
         unsigned char readBit();
-        void readNBits();
+        unsigned char readBit(short nbit,int nByte);
+        void readNBits(int n);
         void close();
+
     private:
         void setByteOnBuffer();
+        void getNByteFromFile(int byte);
+    
 };
 
 void BitStream::writeBit(unsigned char bit)
@@ -62,7 +69,7 @@ void BitStream::writeBit(unsigned char bit)
 
 unsigned char BitStream::readBit()
 {
-    // get on the byte buffer the correct byte from the file
+    // get on the byte buffer, the correct byte from the file
     setByteOnBuffer();
     // get the "nth" bit from the byte with this formula
     char out = (this->byteBuffer >> this->bitCounter) & 0x01;
@@ -75,11 +82,34 @@ unsigned char BitStream::readBit()
         this->bitCounter = 0; 
         this->byteCounter++;
     }
+    // out will be either 0x00 (0) or 0x01 (1)
+    return out;
+}
+
+unsigned char BitStream::readBit(short nBit,int nByte)
+{
+    // get on the byte buffer, the correct byte from the file
+    getNByteFromFile(nByte);
+    // get the "nth" bit from the byte with this formula
+    char out = (this->byteBuffer >> nBit) & 0x01;
     // out will be either 0x00 (0) or 0x01(1)
     return out;
 }
 
-void BitStream::writeNBits(int n, char *charArray)
+void BitStream::writeNBits(int n, char character)
+{
+    for(int bit = 0; bit < n; bit++)
+    {
+        // get the "nth" bit from the character with this formula
+        // We are writing from MSB to LSB, hence why  we mask with "0x80"
+        unsigned char byteToWrite = (character << bit) & 0x80;
+        // The bit is stored in the MSB of the previous variabe, so we shift it 
+        // 7 places, so that the bit we care is on LSB, and call writeBit
+        this->writeBit(byteToWrite>>7);
+    }
+}
+
+void BitStream::writeCharArray(int n, char *charArray)
 {
     for (int i=0; i<n; i++) {
         for(int bit=0;bit<8;bit++)
@@ -94,20 +124,57 @@ void BitStream::writeNBits(int n, char *charArray)
     }
 }
 
-void BitStream::readNBits()
-{    
+void BitStream::readNBits(int n)
+{   
+    std::cout << "MSB -> LSB" << std::endl;
+    unsigned char out = 0x00;
+    char aux = 0x00;
+    for(int i = 1; i <= n; i++)
+    {
+        aux = this->readBit();
+        if(aux==0x00)
+        {
+            std::cout << (short) aux;
+            out = out >> 1; 
+        }
+        else if(aux==0x01)
+        {
+            std::cout << (short) aux;
+            out = (out >> 1) | 0x80; 
+        }
+        if(i%8==0) std::cout << " is " << std::bitset<8>(out) << " : "<< out <<"\n" << std::endl;
+    }
 }
 
 void BitStream::setByteOnBuffer()
 {
-    // Get the byte from the file thats currently being read bit by bit 
-    this->byteBuffer = fileStream.get();
     // seekg(n) puts the internal file pointer on the "nth" byte. This "nth" byte is updated internally as we read bit by bit 
     fileStream.seekg(this->byteCounter);
+    // Get the byte from the file thats currently being read bit by bit 
+    this->byteBuffer = fileStream.get();
 }
 
+void BitStream::getNByteFromFile(int byte)
+{
+    // seekg(n) puts the internal file pointer on the "nth" byte. This "nth" byte is updated internally as we read bit by bit 
+    fileStream.seekg(byte);
+    // Get the byte from the file thats currently being read bit by bit 
+    this->byteBuffer = fileStream.get();
+}
 void BitStream::close()
 {
-    cout << "Closing File" << endl;
+    // If this filestream was a 'write' one, we finish the final byte
+    if(this->operation=='w')
+    {
+        // means we have yet to complete the final byte
+        if (this->bitCounter != 0) 
+        {
+            // check how many bits left to be written
+            short bitsLeft = (8 - this->bitCounter);
+            // write that ammount of bits with character 0
+            this->writeNBits(bitsLeft, 0x00);
+        }
+    }
+    std::cout << "\nClosing File" << std::endl;
     this->fileStream.close();
 }
