@@ -21,9 +21,10 @@ class Golomb{
 
     public:
         void encodeNumbers(int *nums, int size);
-        Golomb* decodeNumbers(int nums[]);
+        void decodeNumbers(string codeword);
         string getInfo();
         string decToBinary(int n);
+        int binToDec(long long n);
 
         // public constructor
         Golomb(int m){
@@ -78,11 +79,11 @@ void Golomb::encodeNumbers(int *nums, int size){
             codeword = codeword + tmp;
 
             // create the corresponding golomb object type 
-            Golomb code = Golomb(q,r,codeword);
+            Golomb code = Golomb(q, r, codeword);
             // ad the object to the array of golomb codes
             golombCodes[i] = code;
-        }
-        else{
+        }   
+            else{
             cout << "ERROR!! The number inserted should be greater or equal to zero!" << endl;
         }
     }
@@ -92,7 +93,7 @@ void Golomb::encodeNumbers(int *nums, int size){
     }
 }
 
-// function to convert decimal to binary
+// Function to convert decimal to binary
 string Golomb::decToBinary(int n){
     string bin = "";
     // array to store binary number
@@ -119,7 +120,54 @@ string Golomb::decToBinary(int n){
     return bin;
 }
 
-// to print the info about the object
+// To print the info about the object
 string Golomb::getInfo(){
     return "q: " + to_string(this->q) + " |  r: " + to_string(this->r) + " | codeword: " + this->codeword;
+}
+
+void Golomb::decodeNumbers(string codeword){
+    int index = 0, r;
+    
+    // Calc ceil(log2(m))
+    int logCeil = ceil(log(this->m) / log(2));
+    int numBits = pow(2, logCeil) - this->m;
+    
+    // Counting the number of 1's
+    while (codeword[index] == '1'){
+        index++;
+    }   
+    // q represents the number of 1's 
+    int q = index;
+    
+    string str = codeword.substr(index, codeword.length());
+
+    // Convert the binary substring to decimal
+    int numFromBin = Golomb::binToDec(stoll(str));
+    
+    if(str.size() > numBits){
+        r = numFromBin - numBits;
+    }
+    else{
+        r = numFromBin;
+    }
+
+    // Calculate the final number
+    int num = q * this->m + r;
+
+    // Print the info
+    cout << "codeword: " << codeword << " | i: " << num << " | q: " << q << " | r: "<< r << endl;
+}
+
+// Binary code to decimal
+int Golomb::binToDec(long long n) {
+  int dec = 0, i = 0, rem;
+
+  while (n!=0) {
+    rem = n % 10;
+    n /= 10;
+    dec += rem * pow(2, i);
+    ++i;
+  }
+
+  return dec;
 }
