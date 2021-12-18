@@ -79,6 +79,7 @@ int main()
 
     BitStream bs5("chararray.bits",'r');
     bs5.readNBits(5);
+    bs5.readNBits(16);
     bs5.close();
 
     BitStream bs6("chararray.bits",'r');

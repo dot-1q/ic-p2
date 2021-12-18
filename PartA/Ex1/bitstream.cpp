@@ -8,7 +8,7 @@ class BitStream
 {
     std::fstream fileStream;
     char operation=0x00;
-    char byteBuffer=0x00;
+    unsigned char byteBuffer=0x00;
     short bitCounter=0;
     int byteCounter=0;
     int fileByteSize=0;
@@ -126,7 +126,9 @@ void BitStream::writeCharArray(int n, char *charArray)
 
 void BitStream::readNBits(int n)
 {   
-    std::cout << "MSB -> LSB" << std::endl;
+    std::cout << "\nMSB -> LSB" << std::endl;
+    this->bitCounter=0;
+    this->byteCounter=0;
     unsigned char out = 0x00;
     char aux = 0x00;
     for(int i = 1; i <= n; i++)
@@ -161,6 +163,7 @@ void BitStream::getNByteFromFile(int byte)
     // Get the byte from the file thats currently being read bit by bit 
     this->byteBuffer = fileStream.get();
 }
+
 void BitStream::close()
 {
     // If this filestream was a 'write' one, we finish the final byte
