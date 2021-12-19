@@ -5,47 +5,66 @@ using namespace std;
 
 class Golomb{
     int m;
-    int q;
-    int r;
-    string codeword;
-
-    // private constructor
-    Golomb(int q, int r, string codeword){
-        this->q = q;
-        this->r = r;
-        this->codeword = codeword;
-    };
-
-    // default constructor
-    Golomb(){};
 
     public:
-        void encodeNumbers(int *nums, int size);
-        void decodeNumbers(string codeword);
-        string getInfo();
-        string decToBinary(int n);
-        int binToDec(long long n);
+        string encodeNumber(int num);
+        int decodeNumber(string codeword);
 
         // public constructor
         Golomb(int m){
             this->m = m;
         };
+
+    private:
+        string getCode(int num, int m);
+        int decodeCode(string codeword);
+        string decToBinary(int n);
+        int binToDec(long long n);
 };
 
-void Golomb::encodeNumbers(int *nums, int size){
-    Golomb golombCodes[size];
+string Golomb::encodeNumber(int num){
+    
+    // POSITIVE NUMBERS ARE MAPPED TO 2x-1
+    // NEGATIVE NUMBERS ARE MAPPED TO -2x
+    string code;
+    if (num < 0) 
+    {
+        code = getCode(num*(-2),this->m); 
+    }
+    else 
+    {
+       code = getCode((num*2)-1,this->m); 
+    }
+    
+    return code;
+}
 
-    for(int i = 0; i < size; i++){
-        // num should be greater or equal to zero
-        if(nums[i] >= 0){
-            // calc the q part
-            int q = floor(nums[i] / this->m);
-            // calc the r part
-            int r = nums[i] - (q * this->m);
+int Golomb::decodeNumber(string codeword){
+    int number = decodeCode(codeword);
 
-            // calc ceil(log2(m))
-            int logCeil = ceil(log(this->m) / log(2));
-            int numBits = pow(2, logCeil) - this->m;
+    // Since we map positive and negative integers, we know that
+    // even encoded numbers were negative, and odd ones are 
+    // positive
+
+    if(number % 2 == 0)
+    {
+        return (number/-2);
+    }
+    else 
+    {
+        return ((number+1)/2); 
+    }
+}
+
+string Golomb::getCode(int num, int m){
+        // calc the q part
+        int q = floor(num / m);
+        // calc the r part
+        int r = num - (q * m);
+        
+        // calc ceil(log2(m))
+            int logCeil = ceil(log(m) / log(2));
+            int numBits = pow(2, logCeil) - m;
 
             // creating the codeword
             string codeword = "";
@@ -64,10 +83,10 @@ void Golomb::encodeNumbers(int *nums, int size){
             // pass the r value to binary code
             string tmp = "";
             if(r < numBits){
-                tmp = Golomb::decToBinary(r);
+                tmp = decToBinary(r);
             }
             else{
-                tmp = Golomb::decToBinary(r+numBits);
+                tmp = decToBinary(r+numBits);
             }
 
             if (tmp.size() < (numBits - 1) ){
@@ -76,56 +95,13 @@ void Golomb::encodeNumbers(int *nums, int size){
                     tmp = "0" + tmp;
                 }
             }
+
             codeword = codeword + tmp;
-
-            // create the corresponding golomb object type 
-            Golomb code = Golomb(q, r, codeword);
-            // ad the object to the array of golomb codes
-            golombCodes[i] = code;
-        }   
-            else{
-            cout << "ERROR!! The number inserted should be greater or equal to zero!" << endl;
-        }
-    }
-
-    for(int i = 0; i < size; i++){
-        cout << "i: "<< i << " | " << golombCodes[i].getInfo() << endl;
-    }
+            // return golomb code
+            return codeword;
 }
 
-// Function to convert decimal to binary
-string Golomb::decToBinary(int n){
-    string bin = "";
-    // array to store binary number
-    int binaryNum[32];
- 
-    if (n == 0){
-        return "0";
-    }
-    
-    // counter for binary array
-    int i = 0;
-    while (n > 0) {
-        // storing remainder in binary array
-        binaryNum[i] = n % 2;
-        n = n / 2;
-        i++;
-    }
- 
-    // printing binary array in reverse order
-    for (int j = i - 1; j >= 0; j--){
-        bin = bin + to_string(binaryNum[j]);
-    }
-
-    return bin;
-}
-
-// To print the info about the object
-string Golomb::getInfo(){
-    return "q: " + to_string(this->q) + " |  r: " + to_string(this->r) + " | codeword: " + this->codeword;
-}
-
-void Golomb::decodeNumbers(string codeword){
+int Golomb::decodeCode(string codeword){
     int index = 0, r;
     
     // Calc ceil(log2(m))
@@ -153,9 +129,34 @@ void Golomb::decodeNumbers(string codeword){
 
     // Calculate the final number
     int num = q * this->m + r;
+    return num;
+}
 
-    // Print the info
-    cout << "codeword: " << codeword << " | i: " << num << " | q: " << q << " | r: "<< r << endl;
+// Function to convert decimal to binary
+string Golomb::decToBinary(int n){
+    string bin = "";
+    // array to store binary number
+    int binaryNum[32];
+ 
+    if (n == 0){
+        return "0";
+    }
+    
+    // counter for binary array
+    int i = 0;
+    while (n > 0) {
+        // storing remainder in binary array
+        binaryNum[i] = n % 2;
+        n = n / 2;
+        i++;
+    }
+ 
+    // printing binary array in reverse order
+    for (int j = i - 1; j >= 0; j--){
+        bin = bin + to_string(binaryNum[j]);
+    }
+
+    return bin;
 }
 
 // Binary code to decimal
