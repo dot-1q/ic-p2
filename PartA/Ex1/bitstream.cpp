@@ -2,23 +2,9 @@
 #include <limits>
 #include <fstream>
 #include <bitset>
+#include "bitstream.h"
 
-
-class BitStream 
-{
-    std::fstream fileStream;
-    char operation=0x00;
-    unsigned char byteBuffer=0x00;
-    short bitCounter=0;
-    short readBitCounter=7;
-    int byteCounter=0;
-    int fileByteSize=0;
-
-    // PUBLIC METHODS // 
-    public:
-    BitStream();
-
-    BitStream(std::string file, char op)
+BitStream::BitStream(std::string file, char op)
     {
         if (op == 'r')
         {
@@ -40,20 +26,6 @@ class BitStream
         }
 
     };
-        void writeBit(unsigned char bit);
-        void writeNBits(int n, char character);
-        void writeCharArray(int n, char* charArray);
-        unsigned char readBit();
-        unsigned char readBit(short nbit,int nByte);
-        unsigned char readNBits(int n);
-        void close();
-        int getByteSize();
-
-    private:
-        void setByteOnBuffer();
-        void getNByteFromFile(int byte);
-    
-};
 
 void BitStream::writeBit(unsigned char bit)
 {
