@@ -1,13 +1,13 @@
-#include "../Ex3/Golomb.cpp"
-#include "../Ex1/bitstream.cpp"
+#include "../Ex3/Golomb.h"
+#include "../Ex1/bitstream.h"
 #include <cmath>
 #include <string>
 #include <iostream>
 
-string decodeCode(BitStream &stream, short restBits, int &n)
+std::string decodeCode(BitStream &stream, short restBits, int &n)
 {
     unsigned char out;
-    string decode="";
+    std::string decode="";
     out = stream.readBit();
     n++;
 
@@ -69,14 +69,13 @@ int main(){
     int bitsInFile = bd.getByteSize() * 8;
     short rbin = ceil(log(golombEncoder.m)/log(2));
     int bits = 0;
-    string code;
+    std::string code;
 
     while(bits < bitsInFile)
     {
         code = decodeCode(bd,rbin,bits); 
-        cout << golombDecoder.decodeNumber(code) << endl;
+        std::cout << golombDecoder.decodeNumber(code) << std::endl;
     }
 
     bd.close();
 }
-

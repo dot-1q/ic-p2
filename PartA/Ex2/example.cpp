@@ -1,4 +1,5 @@
-#include "../Ex1/bitstream.cpp"
+#include "../Ex1/bitstream.h"
+#include <iostream>
 
 using namespace std;
 
