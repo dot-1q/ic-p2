@@ -10,12 +10,15 @@ class BitStream
     char operation=0x00;
     unsigned char byteBuffer=0x00;
     short bitCounter=0;
+    short readBitCounter=7;
     int byteCounter=0;
     int fileByteSize=0;
 
     // PUBLIC METHODS // 
     public:
-    BitStream(const std::string file, char op)
+    BitStream();
+
+    BitStream(std::string file, char op)
     {
         if (op == 'r')
         {
@@ -23,7 +26,7 @@ class BitStream
             this->fileStream.open(file,std::ios::in);
             // Find how many bytes are in the file to be read, so that we can keep track on wich to read
             this->fileStream.ignore( std::numeric_limits<std::streamsize>::max() );
-            fileByteSize = this->fileStream.gcount();
+            this->fileByteSize = this->fileStream.gcount();
             this->fileStream.clear();   //  Since ignore will have set eof.
             this->fileStream.seekg( 0, std::ios_base::beg );
         }
@@ -42,8 +45,9 @@ class BitStream
         void writeCharArray(int n, char* charArray);
         unsigned char readBit();
         unsigned char readBit(short nbit,int nByte);
-        void readNBits(int n);
+        unsigned char readNBits(int n);
         void close();
+        int getByteSize();
 
     private:
         void setByteOnBuffer();
@@ -72,14 +76,14 @@ unsigned char BitStream::readBit()
     // get on the byte buffer, the correct byte from the file
     setByteOnBuffer();
     // get the "nth" bit from the byte with this formula
-    char out = (this->byteBuffer >> this->bitCounter) & 0x01;
+    char out = (this->byteBuffer >> this->readBitCounter) & 0x01;
     // increment the bit read
-    this->bitCounter++;
+    this->readBitCounter--;
     // If we've internally read 8 bits, means we've read a whole byte
-    if(this->bitCounter==8)
+    if(this->readBitCounter==-1)
     {
         // so we update the bitcounter variable and the byte counter accordingly 
-        this->bitCounter = 0; 
+        this->readBitCounter = 7; 
         this->byteCounter++;
     }
     // out will be either 0x00 (0) or 0x01 (1)
@@ -124,10 +128,9 @@ void BitStream::writeCharArray(int n, char *charArray)
     }
 }
 
-void BitStream::readNBits(int n)
+unsigned char BitStream::readNBits(int n)
 {   
-    std::cout << "\nMSB -> LSB" << std::endl;
-    this->bitCounter=0;
+    //this->readBitCounter=7;
     this->byteCounter=0;
     unsigned char out = 0x00;
     char aux = 0x00;
@@ -146,6 +149,7 @@ void BitStream::readNBits(int n)
         }
         if(i%8==0) std::cout << " is " << std::bitset<8>(out) << " : "<< out <<"\n" << std::endl;
     }
+    return out;
 }
 
 void BitStream::setByteOnBuffer()
@@ -162,6 +166,11 @@ void BitStream::getNByteFromFile(int byte)
     fileStream.seekg(byte);
     // Get the byte from the file thats currently being read bit by bit 
     this->byteBuffer = fileStream.get();
+}
+
+int BitStream::getByteSize()
+{
+    return this->fileByteSize;
 }
 
 void BitStream::close()

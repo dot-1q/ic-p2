@@ -1,12 +1,13 @@
-#include <iostream>
 #include <math.h>
+#include <iostream>
 #include <string>
+#include <bitset>
+
 using namespace std;
 
 class Golomb{
-    int m;
-
     public:
+        int m;
         string encodeNumber(int num);
         int decodeNumber(string codeword);
 
@@ -15,10 +16,12 @@ class Golomb{
             this->m = m;
         };
 
+        Golomb();
+
     private:
         string getCode(int num, int m);
         int decodeCode(string codeword);
-        string decToBinary(int n);
+        string decToBinary(int number);
         int binToDec(long long n);
 };
 
@@ -57,48 +60,52 @@ int Golomb::decodeNumber(string codeword){
 }
 
 string Golomb::getCode(int num, int m){
-        // calc the q part
-        int q = floor(num / m);
-        // calc the r part
-        int r = num - (q * m);
+    // calc the q part
+    int q = floor(num / m);
+    // calc the r part
+    int r = num - (q * m);
         
-        // calc ceil(log2(m))
-            int logCeil = ceil(log(m) / log(2));
-            int numBits = pow(2, logCeil) - m;
+    // calc ceil(log2(m))
+    int logCeil = ceil(log(m) / log(2));
+    int numBits = pow(2, logCeil) - m;
 
-            // creating the codeword
-            string codeword = "";
-            if(q == 0){
-                codeword = "0";
-            }
-            else{
-                // q represents the number of 1's
-                for(int k = 0; k < q; k++){
-                    codeword = codeword + "1";
-                }
-                // add a zero at the end
-                codeword = codeword + "0";
-            }
+    // creating the codeword
+    string codeword = "";
+    if(q == 0){
+        codeword = "0";
+    }
+    else{
+        // q represents the number of 1's
+        for(int k = 0; k < q; k++){
+            codeword = codeword + "1";
+        }
+        // add a zero at the end
+            codeword = codeword + "0";
+    }
 
-            // pass the r value to binary code
-            string tmp = "";
-            if(r < numBits){
-                tmp = decToBinary(r);
-            }
-            else{
-                tmp = decToBinary(r+numBits);
-            }
+    // pass the r value to binary code
+    string tmp = "";
+    //if(r < numBits){
+    //    tmp = decToBinary(r);
+    //}
+    //else{
+    //   tmp = decToBinary(r+numBits);
+    //}
+    
 
-            if (tmp.size() < (numBits - 1) ){
-                int add = (numBits-1) - tmp.size();
-                for(int j = 0; j < add; j++){
-                    tmp = "0" + tmp;
-                }
-            }
+    tmp = decToBinary(r);
+    if (tmp.size() < logCeil ){
+        int add = logCeil - tmp.size();
+        for(int j = 0; j < add; j++){
+            tmp = "0" + tmp;
+        }
+    }
 
-            codeword = codeword + tmp;
-            // return golomb code
-            return codeword;
+    // PARA JÁ , ASSUMIMOS QUE O M APENAS PODE SER POTENCIA DE 2
+    // O QUE IMPOE UM NUMERO FIXO PARA OS BITS DE R
+    codeword = codeword + tmp;
+    // return golomb code
+    return codeword;
 }
 
 int Golomb::decodeCode(string codeword){
@@ -133,21 +140,21 @@ int Golomb::decodeCode(string codeword){
 }
 
 // Function to convert decimal to binary
-string Golomb::decToBinary(int n){
+string Golomb::decToBinary(int number){
     string bin = "";
     // array to store binary number
     int binaryNum[32];
  
-    if (n == 0){
+    if (number == 0){
         return "0";
     }
     
     // counter for binary array
     int i = 0;
-    while (n > 0) {
+    while (number > 0) {
         // storing remainder in binary array
-        binaryNum[i] = n % 2;
-        n = n / 2;
+        binaryNum[i] = number % 2;
+        number = number / 2;
         i++;
     }
  

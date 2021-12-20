@@ -87,4 +87,5 @@ int main()
     cout << (short) bs6.readBit(7,0);
     cout << (short) bs6.readBit(6,0);
     bs6.close();
+
 }
