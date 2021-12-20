@@ -1,3 +1,4 @@
+#pragma once
 #include <fstream>
 using namespace std;
 
@@ -6,6 +7,7 @@ class BitStream{
     char operation = 0x00;
     unsigned char byteBuffer = 0x00;
     short bitCounter = 0;
+    short readBitCounter = 7;
     int byteCounter = 0;
     int fileByteSize = 0;
 
@@ -17,7 +19,8 @@ class BitStream{
         void writeCharArray(int n, char* charArray);
         unsigned char readBit();
         unsigned char readBit(short nbit,int nByte);
-        void readNBits(int n);
+        unsigned char readNBits(int n);
+        int getByteSize();
         void close();
 
     // Private Methods
