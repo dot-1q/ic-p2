@@ -2,27 +2,12 @@
 #include <iostream>
 #include <string>
 #include <bitset>
+#include "Golomb.h"
 
 using namespace std;
 
-class Golomb{
-    public:
-        int m;
-        string encodeNumber(int num);
-        int decodeNumber(string codeword);
-
-        // public constructor
-        Golomb(int m){
-            this->m = m;
-        };
-
-        Golomb();
-
-    private:
-        string getCode(int num, int m);
-        int decodeCode(string codeword);
-        string decToBinary(int number);
-        int binToDec(long long n);
+Golomb::Golomb(int m){
+    this->m = m;
 };
 
 string Golomb::encodeNumber(int num){
