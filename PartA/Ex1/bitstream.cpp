@@ -2,54 +2,7 @@
 #include <limits>
 #include <fstream>
 #include <bitset>
-
-
-class BitStream 
-{
-    std::fstream fileStream;
-    char operation=0x00;
-    unsigned char byteBuffer=0x00;
-    short bitCounter=0;
-    int byteCounter=0;
-    int fileByteSize=0;
-
-    // PUBLIC METHODS // 
-    public:
-    BitStream(const std::string file, char op)
-    {
-        if (op == 'r')
-        {
-            this->operation = op;
-            this->fileStream.open(file,std::ios::in);
-            // Find how many bytes are in the file to be read, so that we can keep track on wich to read
-            this->fileStream.ignore( std::numeric_limits<std::streamsize>::max() );
-            fileByteSize = this->fileStream.gcount();
-            this->fileStream.clear();   //  Since ignore will have set eof.
-            this->fileStream.seekg( 0, std::ios_base::beg );
-        }
-        else if (op == 'w')
-        {
-            this->operation = op;
-            this->fileStream.open(file,std::ios::out);
-        }
-        else{
-            std::cout << " MODO DE UTILIZAÇÂO: BitStream('filename','r/w')" << std::endl;
-        }
-
-    };
-        void writeBit(unsigned char bit);
-        void writeNBits(int n, char character);
-        void writeCharArray(int n, char* charArray);
-        unsigned char readBit();
-        unsigned char readBit(short nbit,int nByte);
-        void readNBits(int n);
-        void close();
-
-    private:
-        void setByteOnBuffer();
-        void getNByteFromFile(int byte);
-    
-};
+#include "bitstream.h"
 
 void BitStream::writeBit(unsigned char bit)
 {
