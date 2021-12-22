@@ -3,6 +3,7 @@
 #include "AudioFile/AudioFile.h"
 #include <cstdio>
 #include <iterator>
+#include <ostream>
 #include <string>
 #include <iostream>
 #include <math.h>
@@ -34,7 +35,21 @@ void LLAudioCodec::compressAudio()
     Golomb golombEncoder = Golomb(this->m);
     BitStream bs = BitStream(this->residualFileName,'w');
     std::string code;
+
+    // Primeiramente, como os dois primeiros numeros do ficheiro codificado,
+    // guardamos o sample rate e o numero de samples por channel, para podermos
+    // criar o ficheiro de audio com os mesmos parametros que o ficheiro original
     
+    int numSamplePerChannel = this->sourceAudio.getNumSamplesPerChannel();
+    code = golombEncoder.encodeNumber(numSamplePerChannel);
+    writeSample(bs, code);
+    int sourceSampleRate = this->sourceAudio.getSampleRate();
+    code = golombEncoder.encodeNumber(sourceSampleRate);
+    writeSample(bs, code);
+
+    std::cout << "Samples per channel: " << numSamplePerChannel << std::endl;    
+    std::cout << "Sample Rate: " << sourceSampleRate << std::endl;    
+
     // residuais
     float res0_l,res0_r, prev_res0_r, prev_res0_l;
     float res1_l,res1_r, prev_res1_r, prev_res1_l;
@@ -62,9 +77,9 @@ void LLAudioCodec::compressAudio()
     {
         // Multiplicar por 2^15, pois os valores são floats.
         // Na hora de descodificar os codigos de golomb, temos
-        // de recorar que aposa conversão, é necessário dividir por 
+        // de recordar que após a conversão, é necessário dividir por 
         // 2^15
-
+        
         // calculo dos residuais direitos
         res0_r = right_channel[nsample];
         res1_r = res0_r - prev_res0_r;
@@ -102,24 +117,116 @@ void LLAudioCodec::decompressAudio()
 {
     Golomb golombDecoder = Golomb(this->m);
     BitStream bs = BitStream(this->residualFileName,'r');
+    AudioFile<float> outFile;
+    outFile.setNumChannels(2);
+
     int bitsInFile = bs.getByteSize()*8;
     int bitsRead = 0;
     short restBits = ceil(log(golombDecoder.m)/log(2));
     std::string code;
 
-    // residuais
-    float res0_l,res0_r, prev_res0_r, prev_res0_l;
-    float res1_l,res1_r, prev_res1_r, prev_res1_l;
-    float res2_l,res2_r, prev_res2_r, prev_res2_l;
-    float res3_l,res3_r;
-   
-    while (bitsRead < bitsInFile) 
+    // valores
+    float val0_l, val0_r, prev_val0_r, prev_val0_l;
+    float val1_l, val1_r, prev_val1_r, prev_val1_l;
+    float val2_l, val2_r, prev_val2_r, prev_val2_l;
+    float val3_l, val3_r;
+  
+    int left_channel_sample,right_channel_sample;
+    short headerFlag  = 1;
+    short firstSamplesFlag = 1;
+    int samplesRead = 3;
+    int sampleRate;
+    int samplesPerChannel;
+    while (bitsRead < (bitsInFile-11)) 
     {
-        code = decodeCode(bs,restBits,bitsRead);
-        //std::cout << golombDecoder.decodeNumber(code) << std::endl;
-    }
+        if(headerFlag)
+        {
+            code = decodeCode(bs,restBits,bitsRead);
+            samplesPerChannel= golombDecoder.decodeNumber(code);
+            std::cout << "Samples per channel: " << samplesPerChannel << std::endl;    
+            code = decodeCode(bs,restBits,bitsRead);
+            sampleRate = golombDecoder.decodeNumber(code);
+            std::cout << "Sample Rate: " << sampleRate << std::endl;    
+            headerFlag = 0;
+            outFile.setNumSamplesPerChannel(samplesPerChannel);
+            outFile.setSampleRate(sampleRate);
+        }
     
+        // LEMBRAR QUE A SAMPLE DO CANAL ESQUERDO É A PRIMEIRA
+        if(firstSamplesFlag)
+        {
+            code = decodeCode(bs, restBits, bitsRead); 
+            left_channel_sample = golombDecoder.decodeNumber(code);
+            prev_val0_l = (float)(left_channel_sample)/32768;
+            outFile.samples[0][0] = prev_val0_l;
+            
+            code = decodeCode(bs, restBits, bitsRead); 
+            right_channel_sample = golombDecoder.decodeNumber(code);
+            prev_val0_r = (float)(right_channel_sample)/32768;
+            outFile.samples[1][0] = prev_val0_r;
+
+        //////////////////////////////////////////////////////////////
+            code = decodeCode(bs, restBits, bitsRead); 
+            left_channel_sample = golombDecoder.decodeNumber(code);
+            prev_val1_l = (float)(left_channel_sample)/32768;
+            outFile.samples[0][1] = prev_val1_l;
+            
+            code = decodeCode(bs, restBits, bitsRead); 
+            right_channel_sample = golombDecoder.decodeNumber(code);
+            prev_val1_r = (float)(right_channel_sample)/32768;
+            outFile.samples[1][1] = prev_val1_r;
+
+    //////////////////////////////////////////////////////////////////
+            code = decodeCode(bs, restBits, bitsRead); 
+            left_channel_sample = golombDecoder.decodeNumber(code);
+            prev_val2_l = (float)(left_channel_sample)/32768;
+            outFile.samples[0][2] = prev_val2_l;
+            
+            code = decodeCode(bs, restBits, bitsRead); 
+            right_channel_sample = golombDecoder.decodeNumber(code);
+            prev_val2_r = (float)(right_channel_sample)/32768;
+            outFile.samples[1][2] = prev_val2_r;
+
+            firstSamplesFlag=0;
+        }
+
+        // O primeiro número é sempre a sample do Left Channel
+        code = decodeCode(bs,restBits,bitsRead);
+        left_channel_sample = golombDecoder.decodeNumber(code);
+        val3_l = float(left_channel_sample)/32768;
+        val2_l = val3_l + prev_val2_l;
+        prev_val2_l = val2_l;
+        val1_l = val2_l + prev_val1_l;
+        prev_val1_l = val1_l;
+        val0_l = val1_l + prev_val0_l;
+        prev_val0_l = val0_l;
+    
+        // TEM BUG AQUI, FALTA DESCOBRIR O PORQUE DOS RESIDUAIS NAO ESTAREM A SER 
+        // CALCULADOS CORRETAMENTE
+        // PARA JÁ, FICA COM O VALOR DA SAMPLE SEM CALCULO DO RESIDUAL
+        outFile.samples[0][samplesRead] = val3_l;
+
+        // Segundo número é do right channel
+        code = decodeCode(bs,restBits,bitsRead);
+        right_channel_sample = golombDecoder.decodeNumber(code);
+        val3_r = (float)right_channel_sample/32768;
+        val2_r = val3_r + prev_val2_r;
+        prev_val2_r = val2_r;
+        val1_r = val2_r + prev_val1_r;
+        prev_val1_r = val1_r;
+        val0_r = val1_l + prev_val0_r;
+        prev_val0_r = val0_r;
+
+        // TEM BUG AQUI, FALTA DESCOBRIR O PORQUE DOS RESIDUAIS NAO ESTAREM A SER 
+        // CALCULADOS CORRETAMENTE
+        // PARA JÁ, FICA COM O VALOR DA SAMPLE SEM CALCULO DO RESIDUAL
+        outFile.samples[1][samplesRead] = val3_r;
+
+        samplesRead++;
+    }
     bs.close();
+    std::cout << "Samples Read: " << samplesRead << std::endl;
+    outFile.save("outfile",AudioFileFormat::Wave); 
 }
 
 void LLAudioCodec::writeSample(BitStream &stream, std::string &code)
