@@ -1,89 +1,158 @@
-#include "../PartA/Ex1/bitstream.cpp"
-#include "../PartA/Ex3/Golomb.cpp"
+#include "../PartA/Ex1/bitstream.h"
+#include "../PartA/Ex3/Golomb.h"
 #include "AudioFile/AudioFile.h"
+#include <cstdio>
+#include <iterator>
 #include <string>
 #include <iostream>
+#include <math.h>
 
 class LLAudioCodec
 {
-    AudioFile<double> sourceAudio;
-    AudioFile<double> compressedAudio;
+    AudioFile<float> sourceAudio;
+    AudioFile<float> compressedAudio;
     int m;
+    std::string residualFileName;
 
     public:
-    LLAudioCodec(std::string filename, int m)
+    LLAudioCodec(std::string filename, std::string residualFileName, int m)
     {
         this->sourceAudio.load(filename);
         this->m = m;
+        this->residualFileName = residualFileName;
     };
 
     void compressAudio();
     void decompressAudio();
     private:
+    void writeSample(BitStream &bs, std::string &code);
+    std::string decodeCode(BitStream &bs, short restBits, int &bitsRead);
 };
 
 void LLAudioCodec::compressAudio()
 {
     Golomb golombEncoder = Golomb(this->m);
-    std::string left_code;
-    std::string right_code;
+    BitStream bs = BitStream(this->residualFileName,'w');
+    std::string code;
+    
     // residuais
-    int res0_l,res0_r, prev_res0_r, prev_res0_l;
-    int res1_l,res1_r, prev_res1_r, prev_res1_l;
-    int res2_l,res2_r, prev_res2_r, prev_res2_l;
-    int res3_l,res3_r;
+    float res0_l,res0_r, prev_res0_r, prev_res0_l;
+    float res1_l,res1_r, prev_res1_r, prev_res1_l;
+    float res2_l,res2_r, prev_res2_r, prev_res2_l;
+    float res3_l,res3_r;
 
     // todas as samples do canal direito e esquerdo
-    std::vector<double> left_channel = sourceAudio.samples[0];
-    std::vector<double> right_channel = sourceAudio.samples[1];
-    int right_sample;
-    int left_sample;
-
+    std::vector<float> left_channel = sourceAudio.samples[0];
+    std::vector<float> right_channel = sourceAudio.samples[1];
     
     // começamos na sample 3, pelo que temos de colocar nestas
     // variaveis auxiliares os valores das 3 primeiras samples
 
-    prev_res0_r = right_channel[0] * 1000;
-    prev_res0_l = left_channel[0] * 1000;
-    prev_res1_r = right_channel[1] * 1000;
-    prev_res1_l = left_channel[1] * 1000;
-    prev_res2_r = right_channel[2] * 1000;
-    prev_res2_l = left_channel[2] * 1000;
+    prev_res0_r = right_channel[0];
+    prev_res0_l = left_channel[0];
+    prev_res1_r = right_channel[1];
+    prev_res1_l = left_channel[1];
+    prev_res2_r = right_channel[2];
+    prev_res2_l = left_channel[2];
+
+    int integer_left;
+    int integer_right;
 
     for(int nsample=3; nsample<sourceAudio.getNumSamplesPerChannel(); nsample++)
     {
-        // Multiplicar por 1000, pois os valores são floats.
+        // Multiplicar por 2^15, pois os valores são floats.
         // Na hora de descodificar os codigos de golomb, temos
         // de recorar que aposa conversão, é necessário dividir por 
-        // 1000
-
-        right_sample = right_channel[nsample]*1000;
-        left_sample = left_channel[nsample]*1000;
-
+        // 2^15
 
         // calculo dos residuais direitos
-        res0_r = right_sample;
+        res0_r = right_channel[nsample];
         res1_r = res0_r - prev_res0_r;
         res2_r = res1_r - prev_res1_r;
         res3_r = res2_r - prev_res2_r;
 
+        prev_res0_r = res0_r;
+        prev_res1_r = res1_r;
+        prev_res2_r = res2_r;
+
         // calculo dos residuais esquerdos
-        res0_l = left_sample;
+        res0_l = left_channel[nsample];
         res1_l = res0_l - prev_res0_l;
         res2_l = res1_l - prev_res1_l;
         res3_l = res2_l - prev_res2_l;
         
+        prev_res0_l = res0_l;
+        prev_res1_l = res1_l;
+        prev_res2_l = res2_l;
         
-        left_code = golombEncoder.encodeNumber(res3_l);
-        right_code = golombEncoder.encodeNumber(res3_r);
 
-        cout << "golomb encoded left: " << left_code << endl;
-        cout << "golomb encoded right: " << right_code << endl;
+        // Multiplicar por 2^15 (32768)
+        integer_left = res3_l * 32768; 
+        code = golombEncoder.encodeNumber(integer_left);
+        writeSample(bs, code);
+
+        integer_right = res3_r * 32768; 
+        code = golombEncoder.encodeNumber(integer_right);
+        writeSample(bs, code);
     }
-
+    bs.close();
 }
 
 void LLAudioCodec::decompressAudio()
 {
+    Golomb golombDecoder = Golomb(this->m);
+    BitStream bs = BitStream(this->residualFileName,'r');
+    int bitsInFile = bs.getByteSize()*8;
+    int bitsRead = 0;
+    short restBits = ceil(log(golombDecoder.m)/log(2));
+    std::string code;
+
+    // residuais
+    float res0_l,res0_r, prev_res0_r, prev_res0_l;
+    float res1_l,res1_r, prev_res1_r, prev_res1_l;
+    float res2_l,res2_r, prev_res2_r, prev_res2_l;
+    float res3_l,res3_r;
+   
+    while (bitsRead < bitsInFile) 
+    {
+        code = decodeCode(bs,restBits,bitsRead);
+        //std::cout << golombDecoder.decodeNumber(code) << std::endl;
+    }
     
+    bs.close();
+}
+
+void LLAudioCodec::writeSample(BitStream &stream, std::string &code)
+{
+    for(auto &ch : code)
+    {
+        if(ch=='0') stream.writeBit(0);
+        if(ch=='1') stream.writeBit(1);
+    }
+}
+
+std::string LLAudioCodec::decodeCode(BitStream &stream, short restBits, int &n)
+{
+    unsigned char out;
+    std::string decode="";
+    out = stream.readBit();
+    n++;
+
+    while(out!=0x00)
+    {
+        decode = decode + '1';
+        out = stream.readBit();
+        n++;
+    }
+
+    decode = decode + '0';
+    for(int i = 0; i<restBits;i++)
+    {
+        out = stream.readBit();
+        if(out == 0x00) decode = decode + '0';
+        if(out == 0x01) decode = decode + '1';
+        n++;
+    }
+
+    return decode;
 }
