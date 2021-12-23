@@ -3,6 +3,7 @@
 
 class BitStream{
     std::fstream fileStream;
+    std::string filename;
     char operation = 0x00;
     unsigned char byteBuffer = 0x00;
     short bitCounter = 0;
@@ -12,7 +13,7 @@ class BitStream{
 
     // Public Methods
     public: 
-        BitStream(const std::string file, char op);
+        BitStream(const std::string filename, char op);
         void writeBit(unsigned char bit);
         void writeNBits(int n, char character);
         void writeCharArray(int n, char* charArray);

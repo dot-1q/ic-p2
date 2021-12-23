@@ -4,12 +4,13 @@
 #include <bitset>
 #include "bitstream.h"
 
-BitStream::BitStream(std::string file, char op)
+BitStream::BitStream(std::string filename, char op)
     {
         if (op == 'r')
         {
             this->operation = op;
-            this->fileStream.open(file,std::ios::in);
+            this->filename = filename;
+            this->fileStream.open(filename,std::ios::in);
             // Find how many bytes are in the file to be read, so that we can keep track on wich to read
             this->fileStream.ignore( std::numeric_limits<std::streamsize>::max() );
             this->fileByteSize = this->fileStream.gcount();
@@ -19,7 +20,8 @@ BitStream::BitStream(std::string file, char op)
         else if (op == 'w')
         {
             this->operation = op;
-            this->fileStream.open(file,std::ios::out);
+            this->filename = filename;
+            this->fileStream.open(filename,std::ios::out);
         }
         else{
             std::cout << " MODO DE UTILIZAÇÂO: BitStream('filename','r/w')" << std::endl;
@@ -159,6 +161,6 @@ void BitStream::close()
             this->writeNBits(bitsLeft, 0x00);
         }
     }
-    std::cout << "\nClosing File" << std::endl;
+    std::cout << "\n Closing File \'" << this->filename << " \'" <<  std::endl;
     this->fileStream.close();
 }

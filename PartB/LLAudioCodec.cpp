@@ -14,13 +14,15 @@ class LLAudioCodec
     AudioFile<float> compressedAudio;
     int m;
     std::string residualFileName;
+    std::string outAudio;
 
     public:
-    LLAudioCodec(std::string filename, std::string residualFileName, int m)
+    LLAudioCodec(std::string sourceAudio, std::string outAudio, std::string residualFileName, int m)
     {
-        this->sourceAudio.load(filename);
+        this->sourceAudio.load(sourceAudio);
         this->m = m;
         this->residualFileName = residualFileName;
+        this->outAudio = outAudio;
     };
 
     void compressAudio();
@@ -32,6 +34,7 @@ class LLAudioCodec
 
 void LLAudioCodec::compressAudio()
 {
+    std::cout << "\n ########## Starting Encoding Process ########## " << std::endl;
     Golomb golombEncoder = Golomb(this->m);
     BitStream bs = BitStream(this->residualFileName,'w');
     std::string code;
@@ -47,8 +50,9 @@ void LLAudioCodec::compressAudio()
     code = golombEncoder.encodeNumber(sourceSampleRate);
     writeSample(bs, code);
 
-    std::cout << "Samples per channel: " << numSamplePerChannel << std::endl;    
-    std::cout << "Sample Rate: " << sourceSampleRate << std::endl;    
+    std::cout << "\n      >>>>> Creating Header <<<<< " << std::endl;
+    std::cout << " Samples per channel: " << numSamplePerChannel << std::endl;    
+    std::cout << " Sample Rate: " << sourceSampleRate << std::endl;    
 
     // residuais
     float res0_l,res0_r, prev_res0_r, prev_res0_l;
@@ -56,22 +60,37 @@ void LLAudioCodec::compressAudio()
     float res2_l,res2_r, prev_res2_r, prev_res2_l;
     float res3_l,res3_r;
 
+    int integer_left;
+    int integer_right;
+
     // todas as samples do canal direito e esquerdo
     std::vector<float> left_channel = sourceAudio.samples[0];
     std::vector<float> right_channel = sourceAudio.samples[1];
-    
+   
+
     // começamos na sample 3, pelo que temos de colocar nestas
     // variaveis auxiliares os valores das 3 primeiras samples
+    // e colocar as mesmas no ficheiro comprimido
 
-    prev_res0_r = right_channel[0];
     prev_res0_l = left_channel[0];
-    prev_res1_r = right_channel[1];
+    code=golombEncoder.encodeNumber(prev_res0_l*32768);
+    writeSample(bs, code);
+    prev_res0_r = right_channel[0];
+    code=golombEncoder.encodeNumber(prev_res0_r*32768);
+    writeSample(bs, code);
     prev_res1_l = left_channel[1];
-    prev_res2_r = right_channel[2];
+    code=golombEncoder.encodeNumber(prev_res1_l*32768);
+    writeSample(bs, code);
+    prev_res1_r = right_channel[1];
+    code=golombEncoder.encodeNumber(prev_res1_r*32768);
+    writeSample(bs, code);
     prev_res2_l = left_channel[2];
+    code=golombEncoder.encodeNumber(prev_res2_l*32768);
+    writeSample(bs, code);
+    prev_res2_r = right_channel[2];
+    code=golombEncoder.encodeNumber(prev_res2_r*32768);
+    writeSample(bs, code);
 
-    int integer_left;
-    int integer_right;
 
     for(int nsample=3; nsample<sourceAudio.getNumSamplesPerChannel(); nsample++)
     {
@@ -110,11 +129,13 @@ void LLAudioCodec::compressAudio()
         code = golombEncoder.encodeNumber(integer_right);
         writeSample(bs, code);
     }
+    std::cout << "\n ########## Encoding Process Done ########## " << std::endl;
     bs.close();
 }
 
 void LLAudioCodec::decompressAudio()
 {
+    std::cout << "\n ########## Starting Decoding Process ########## " << std::endl;
     Golomb golombDecoder = Golomb(this->m);
     BitStream bs = BitStream(this->residualFileName,'r');
     AudioFile<float> outFile;
@@ -141,12 +162,13 @@ void LLAudioCodec::decompressAudio()
     {
         if(headerFlag)
         {
+            std::cout << "\n      >>>>> Reading Header <<<<< " << std::endl;
             code = decodeCode(bs,restBits,bitsRead);
             samplesPerChannel= golombDecoder.decodeNumber(code);
-            std::cout << "Samples per channel: " << samplesPerChannel << std::endl;    
+            std::cout << " Samples per channel: " << samplesPerChannel << std::endl;    
             code = decodeCode(bs,restBits,bitsRead);
             sampleRate = golombDecoder.decodeNumber(code);
-            std::cout << "Sample Rate: " << sampleRate << std::endl;    
+            std::cout << " Sample Rate: " << sampleRate << std::endl;    
             headerFlag = 0;
             outFile.setNumSamplesPerChannel(samplesPerChannel);
             outFile.setSampleRate(sampleRate);
@@ -195,38 +217,41 @@ void LLAudioCodec::decompressAudio()
         left_channel_sample = golombDecoder.decodeNumber(code);
         val3_l = float(left_channel_sample)/32768;
         val2_l = val3_l + prev_val2_l;
-        prev_val2_l = val2_l;
         val1_l = val2_l + prev_val1_l;
-        prev_val1_l = val1_l;
         val0_l = val1_l + prev_val0_l;
-        prev_val0_l = val0_l;
     
+        prev_val2_l = val2_l; 
+        prev_val1_l = val1_l; 
+        prev_val0_l = val0_l; 
+
         // TEM BUG AQUI, FALTA DESCOBRIR O PORQUE DOS RESIDUAIS NAO ESTAREM A SER 
         // CALCULADOS CORRETAMENTE
         // PARA JÁ, FICA COM O VALOR DA SAMPLE SEM CALCULO DO RESIDUAL
-        outFile.samples[0][samplesRead] = val3_l;
+        outFile.samples[0][samplesRead] = val0_l;
 
         // Segundo número é do right channel
         code = decodeCode(bs,restBits,bitsRead);
         right_channel_sample = golombDecoder.decodeNumber(code);
         val3_r = (float)right_channel_sample/32768;
         val2_r = val3_r + prev_val2_r;
-        prev_val2_r = val2_r;
         val1_r = val2_r + prev_val1_r;
-        prev_val1_r = val1_r;
         val0_r = val1_l + prev_val0_r;
-        prev_val0_r = val0_r;
+
+        prev_val2_r = val2_r; 
+        prev_val1_r = val1_r; 
+        prev_val0_r = val0_r; 
 
         // TEM BUG AQUI, FALTA DESCOBRIR O PORQUE DOS RESIDUAIS NAO ESTAREM A SER 
         // CALCULADOS CORRETAMENTE
         // PARA JÁ, FICA COM O VALOR DA SAMPLE SEM CALCULO DO RESIDUAL
-        outFile.samples[1][samplesRead] = val3_r;
+        outFile.samples[1][samplesRead] = val0_r;
 
         samplesRead++;
     }
+
+    std::cout << "\n ########## Decoding Process Done ########## " << std::endl;
     bs.close();
-    std::cout << "Samples Read: " << samplesRead << std::endl;
-    outFile.save("outfile",AudioFileFormat::Wave); 
+    outFile.save(this->outAudio,AudioFileFormat::Wave); 
 }
 
 void LLAudioCodec::writeSample(BitStream &stream, std::string &code)
