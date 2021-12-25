@@ -1,12 +1,12 @@
 #include <string>
 #include <iostream>  
-#include "./LLAudioCodec.cpp"
+#include "AudioCodec.h"
 
 int main(int argc, char *argcv[])
 {
-    LLAudioCodec codec1 = LLAudioCodec("source.wav","outAudio/out.wav", "outResidual/outSource.txt",2048);
-    LLAudioCodec codec2 = LLAudioCodec("sample05.wav","outAudio/out05.wav", "outResidual/out05.txt",2048);
-    LLAudioCodec codec3 = LLAudioCodec("sample07.wav","outAudio/out07.wav", "outResidual/out07.txt",2048);
+    AudioCodec codec1 = AudioCodec("source.wav","outAudio/out.wav", "outResidual/outSource.txt",2048);
+    AudioCodec codec2 = AudioCodec("sample05.wav","outAudio/out05.wav", "outResidual/out05.txt",2048);
+    AudioCodec codec3 = AudioCodec("sample07.wav","outAudio/out07.wav", "outResidual/out07.txt",2048);
     
     codec1.compressAudio();
     codec2.compressAudio();

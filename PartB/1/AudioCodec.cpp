@@ -1,38 +1,26 @@
-#include "../PartA/Ex1/bitstream.h"
-#include "../PartA/Ex3/Golomb.h"
-#include "AudioFile/AudioFile.h"
+#include "../../PartA/Ex1/bitstream.h"
+#include "../../PartA/Ex3/Golomb.h"
+#include "./AudioFile/AudioFile.h"
+#include "AudioCodec.h"
 #include <cstdio>
+#include <fstream>
 #include <iterator>
 #include <ostream>
 #include <string>
 #include <iostream>
 #include <math.h>
+#include <map>
+#include <iterator>
 
-class LLAudioCodec
+AudioCodec::AudioCodec(std::string sourceAudio, std::string outAudio, std::string residualFileName, int m)
 {
-    AudioFile<float> sourceAudio;
-    AudioFile<float> compressedAudio;
-    int m;
-    std::string residualFileName;
-    std::string outAudio;
-
-    public:
-    LLAudioCodec(std::string sourceAudio, std::string outAudio, std::string residualFileName, int m)
-    {
-        this->sourceAudio.load(sourceAudio);
-        this->m = m;
-        this->residualFileName = residualFileName;
-        this->outAudio = outAudio;
-    };
-
-    void compressAudio();
-    void decompressAudio();
-    private:
-    void writeSample(BitStream &bs, std::string &code);
-    std::string decodeCode(BitStream &bs, short restBits, int &bitsRead);
+    this->sourceAudio.load(sourceAudio);
+    this->m = m;
+    this->residualFileName = residualFileName;
+    this->outAudio = outAudio;
 };
 
-void LLAudioCodec::compressAudio()
+void AudioCodec::compressAudio()
 {
     std::cout << "\n ########## Starting Encoding Process ########## " << std::endl;
     Golomb golombEncoder = Golomb(this->m);
@@ -94,10 +82,11 @@ void LLAudioCodec::compressAudio()
 
     for(int nsample=3; nsample<sourceAudio.getNumSamplesPerChannel(); nsample++)
     {
+        // !!!!!!!!!!!!!!! DICA DO PROFESSOR !!!!!!!!!!!!!!!!!!!
+        //
         // Multiplicar por 2^15, pois os valores são floats.
         // Na hora de descodificar os codigos de golomb, temos
-        // de recordar que após a conversão, é necessário dividir por 
-        // 2^15
+        // de recordar que após a conversão, é necessário dividir por 2^15
         
         // calculo dos residuais direitos
         res0_r = right_channel[nsample];
@@ -133,7 +122,7 @@ void LLAudioCodec::compressAudio()
     bs.close();
 }
 
-void LLAudioCodec::decompressAudio()
+void AudioCodec::decompressAudio()
 {
     std::cout << "\n ########## Starting Decoding Process ########## " << std::endl;
     Golomb golombDecoder = Golomb(this->m);
@@ -224,9 +213,6 @@ void LLAudioCodec::decompressAudio()
         prev_val1_l = val1_l; 
         prev_val0_l = val0_l; 
 
-        // TEM BUG AQUI, FALTA DESCOBRIR O PORQUE DOS RESIDUAIS NAO ESTAREM A SER 
-        // CALCULADOS CORRETAMENTE
-        // PARA JÁ, FICA COM O VALOR DA SAMPLE SEM CALCULO DO RESIDUAL
         outFile.samples[0][samplesRead] = val0_l;
 
         // Segundo número é do right channel
@@ -241,9 +227,6 @@ void LLAudioCodec::decompressAudio()
         prev_val1_r = val1_r; 
         prev_val0_r = val0_r; 
 
-        // TEM BUG AQUI, FALTA DESCOBRIR O PORQUE DOS RESIDUAIS NAO ESTAREM A SER 
-        // CALCULADOS CORRETAMENTE
-        // PARA JÁ, FICA COM O VALOR DA SAMPLE SEM CALCULO DO RESIDUAL
         outFile.samples[1][samplesRead] = val0_r;
 
         samplesRead++;
@@ -254,7 +237,7 @@ void LLAudioCodec::decompressAudio()
     outFile.save(this->outAudio,AudioFileFormat::Wave); 
 }
 
-void LLAudioCodec::writeSample(BitStream &stream, std::string &code)
+void AudioCodec::writeSample(BitStream &stream, std::string &code)
 {
     for(auto &ch : code)
     {
@@ -263,7 +246,7 @@ void LLAudioCodec::writeSample(BitStream &stream, std::string &code)
     }
 }
 
-std::string LLAudioCodec::decodeCode(BitStream &stream, short restBits, int &n)
+std::string AudioCodec::decodeCode(BitStream &stream, short restBits, int &n)
 {
     unsigned char out;
     std::string decode="";
@@ -287,4 +270,131 @@ std::string LLAudioCodec::decodeCode(BitStream &stream, short restBits, int &n)
     }
 
     return decode;
+}
+
+void AudioCodec::residualsHistogram()
+{
+
+    std::ofstream leftChannelRes("hists/leftChannelResiduals.txt");
+    std::ofstream rightChannelRes("hists/rightChannelResiduals.txt");
+    std::ofstream originalLeftChannel("hists/OriginalLeftChannelResiduals.txt");
+    std::ofstream originalRightChannel("hists/OriginalRightChannelResiduals.txt");
+    
+    std::map<float, int> leftFreqMap;
+    std::map<float, int> rightFreqMap;
+    std::map<float, int> OriginalRightFreqMap;
+    std::map<float, int> OriginalLeftFreqMap;
+
+    std::cout << "\n ########## Starting Residuals Histogram ########## " << std::endl;
+
+    // residuais
+    float res0_l,res0_r, prev_res0_r, prev_res0_l;
+    float res1_l,res1_r, prev_res1_r, prev_res1_l;
+    float res2_l,res2_r, prev_res2_r, prev_res2_l;
+    float res3_l,res3_r;
+
+    int integer_left;
+    int integer_right;
+
+    // todas as samples do canal direito e esquerdo
+    std::vector<float> left_channel = sourceAudio.samples[0];
+    std::vector<float> right_channel = sourceAudio.samples[1];
+   
+
+    // começamos na sample 3, pelo que temos de colocar nestas
+    // variaveis auxiliares os valores das 3 primeiras samples
+    // e colocar as mesmas no ficheiro comprimido
+
+    prev_res0_l = left_channel[0];
+    prev_res0_r = right_channel[0];
+    prev_res1_l = left_channel[1];
+    prev_res1_r = right_channel[1];
+    prev_res2_l = left_channel[2];
+    prev_res2_r = right_channel[2];
+
+
+    float roundedSample;
+    for(int nsample=3; nsample<sourceAudio.getNumSamplesPerChannel(); nsample++)
+    {
+        
+        // calculo dos residuais direitos
+        res0_r = right_channel[nsample];
+        res1_r = res0_r - prev_res0_r;
+        res2_r = res1_r - prev_res1_r;
+        res3_r = res2_r - prev_res2_r;
+
+        prev_res0_r = res0_r;
+        prev_res1_r = res1_r;
+        prev_res2_r = res2_r;
+        
+        // Original Right Channel
+        roundedSample = round(res0_r*100.0) / 100.0;
+        if(OriginalRightFreqMap.count(roundedSample))
+        {
+            OriginalRightFreqMap[roundedSample] = OriginalRightFreqMap[roundedSample] +1;
+        }else {
+            OriginalRightFreqMap[roundedSample] = 1;
+        }
+
+        // Residuals right channel
+        roundedSample = round(res3_r*100.0) / 100.0;
+        if(rightFreqMap.count(roundedSample))
+        {
+            rightFreqMap[roundedSample] = rightFreqMap[roundedSample] +1;
+        }else {
+            rightFreqMap[roundedSample] = 1;
+        }
+
+        // calculo dos residuais esquerdos
+        res0_l = left_channel[nsample];
+        res1_l = res0_l - prev_res0_l;
+        res2_l = res1_l - prev_res1_l;
+        res3_l = res2_l - prev_res2_l;
+        
+        prev_res0_l = res0_l;
+        prev_res1_l = res1_l;
+        prev_res2_l = res2_l;
+
+        //Original
+        roundedSample = round(res0_l*100.0) / 100.0;
+        if(OriginalLeftFreqMap.count(roundedSample))
+        {
+            OriginalLeftFreqMap[roundedSample] = OriginalLeftFreqMap[roundedSample] +1;
+        }else {
+            OriginalLeftFreqMap[roundedSample] = 1;
+        }
+
+        // Residuals left channel
+        roundedSample = round(res3_l*100.0) / 100.0;
+        if(leftFreqMap.count(roundedSample))
+        {
+            leftFreqMap[roundedSample] = leftFreqMap[roundedSample] +1;
+        }else {
+            leftFreqMap[roundedSample] = 1;
+        }
+    }
+
+
+
+    std::cout << "Creating data files for left and right channels samples frequency" << std::endl;
+    std::map<float, int>:: iterator itr;
+    for (itr = leftFreqMap.begin(); itr != leftFreqMap.end(); itr++)
+    {
+        leftChannelRes << itr->first << ',' << itr->second << std::endl;
+    }
+
+    for (itr = rightFreqMap.begin(); itr != rightFreqMap.end(); itr++)
+    {
+        rightChannelRes << itr->first << ',' << itr->second << std::endl;
+    }
+    for (itr = OriginalRightFreqMap.begin(); itr != OriginalRightFreqMap.end(); itr++)
+    {
+        originalRightChannel << itr->first << ',' << itr->second << std::endl;
+    }
+    for (itr = OriginalLeftFreqMap.begin(); itr != OriginalLeftFreqMap.end(); itr++)
+    {
+        originalLeftChannel << itr->first << ',' << itr->second << std::endl;
+    }
+
+    std::cout << "\n ########## Residuals Saved ########## " << std::endl;
 }
