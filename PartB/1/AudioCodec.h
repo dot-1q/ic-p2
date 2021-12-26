@@ -13,8 +13,10 @@ class AudioCodec
 
    public:
    AudioCodec(std::string sourceAudio, std::string outAudio, std::string residualFileName, int m);
-   void compressAudio();
-   void decompressAudio();
+   void compressAudioLossless();
+   void decompressAudioLossless();
+   void compressAudioLossy(float lb);
+   void decompressAudioLossy(float lb);
    void residualsHistogram();
 
    private:
