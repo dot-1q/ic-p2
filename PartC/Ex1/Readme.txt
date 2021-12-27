@@ -1,3 +1,3 @@
 How to compile:
 
-g++ [-cpp file name-] -lX11 -lpthread -o [-output file name-]
+g++ testImageCodec.cpp ../../PartA/Ex1/bitstream.cpp ../../PartA/Ex3/Golomb.cpp -lX11 -lpthread -o llimage

@@ -1,24 +1,33 @@
-#include <CImg.h>
-#include "imageCodec.cpp"
+#include "CImg.h"
+#include "ImageCodec.cpp"
 
 using namespace cimg_library;
-using namespace std;
 
 int main(){
+
     ImageCodec codec = ImageCodec("monarch.ppm");
+
     CImg<unsigned char> imgYUV420 = codec.convertToYUV420();
-    imgYUV420.save("monarchYUV420.ppm");
-    cout << "CONERSION DONE" << endl;
+    imgYUV420.save("outImage/monarchYUV420.ppm");
+    std::cout << "CONVERSION DONE" << std::endl;
 
-    CImg<unsigned char> img("monarchYUV420.ppm");
-    CImg<unsigned char> imgPredicted = codec.losslessJPEG(img);
-    imgPredicted.save("predictedImage.ppm");
-    cout << "PREDICTION DONE" << endl;
+    CImg<unsigned char> img("outImage/monarchYUV420.ppm");
+    codec.losslessJPEG(img,"outResidual/monarchRes1",1,128);
+    codec.losslessJPEG(img,"outResidual/monarchRes2",2,128);
+    codec.losslessJPEG(img,"outResidual/monarchRes3",3,128);
+    codec.losslessJPEG(img,"outResidual/monarchRes4",4,128);
+    codec.losslessJPEG(img,"outResidual/monarchRes5",5,128);
+    codec.losslessJPEG(img,"outResidual/monarchRes6",6,128);
+    std::cout << "RESIDUALS DONE" << std::endl;
 
-    CImg<unsigned char> errorImg = codec.predictionError();
-    errorImg.save("errorImage.ppm");
-    cout << "ERROR IMAGE DONE" << endl;
 
-    codec.entropyCoding("errorImage.ppm", "outputInfo.txt");
-    cout << "ENTROPY CODING DONE" << endl;
+
+    codec.losslessDecompression("outResidual/monarchRes1","outImage/decompressed1.ppm",128);
+    codec.losslessDecompression("outResidual/monarchRes2","outImage/decompressed2.ppm",128);
+    codec.losslessDecompression("outResidual/monarchRes3","outImage/decompressed3.ppm",128);
+    codec.losslessDecompression("outResidual/monarchRes4","outImage/decompressed4.ppm",128);
+    codec.losslessDecompression("outResidual/monarchRes5","outImage/decompressed5.ppm",128);
+    codec.losslessDecompression("outResidual/monarchRes6","outImage/decompressed6.ppm",128);
+    std::cout << "DECOMPRESSING DONE" << std::endl;
+
 }
