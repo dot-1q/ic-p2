@@ -1,5 +1,5 @@
-#include "../../PartA/Ex3/Golomb.h"
-#include "../../PartA/Ex1/bitstream.h"
+#include "../../PartA/3/Golomb.h"
+#include "../../PartA/1/bitstream.h"
 #include "CImg.h"
 #include "ImageCodec.h"
 #include <string>

@@ -110,11 +110,11 @@ void AudioCodec::compressAudioLossless()
         prev_res2_l = res2_l;
         
         // Multiplicar por 2^15 (32768)
-        integer_left = (res0_l) * 32768; 
+        integer_left = (res3_l) * 32768; 
         code = golombEncoder.encodeNumber(integer_left);
         writeSample(bs, code);
 
-        integer_right = (res0_r) * 32768; 
+        integer_right = (res3_r) * 32768; 
         code = golombEncoder.encodeNumber(integer_right);
         writeSample(bs, code);
     }

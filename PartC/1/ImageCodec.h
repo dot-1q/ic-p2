@@ -2,7 +2,7 @@
 #include <string>
 #include <array>
 #include "CImg.h"
-#include "../../PartA/Ex1/bitstream.h"
+#include "../../PartA/1/bitstream.h"
 
 class ImageCodec
 {
