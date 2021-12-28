@@ -16,7 +16,7 @@ int main(int argc, char *argcv[])
     std::cout << "\n-----------------------------------------------------------" << std::endl;
 
 
-    codec1.decompressAudioLossy();
+    codec1.decompressAudio();
     //codec2.decompressAudioLossy(0.3);
     //codec3.decompressAudioLossy(0.3);
     return 0;

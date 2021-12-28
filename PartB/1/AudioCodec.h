@@ -1,7 +1,8 @@
 #pragma once
 #include "./AudioFile/AudioFile.h"
-#include "../../PartA/Ex1/bitstream.h"
+#include "../../PartA/1/bitstream.h"
 #include <string>
+#include <vector>
 
 class AudioCodec
 {
@@ -14,9 +15,8 @@ class AudioCodec
    public:
    AudioCodec(std::string sourceAudio, std::string outAudio, std::string residualFileName, int m);
    void compressAudioLossless();
-   void decompressAudioLossless();
    void compressAudioLossy(int lb);
-   void decompressAudioLossy();
+   void decompressAudio();
    void residualsHistogram();
 
    private:
