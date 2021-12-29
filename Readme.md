@@ -2,13 +2,9 @@
 
 Entropy coding of audio and images.
 
-<br>
-
 ## Installation
 
 No installation of any software is needed. All needed libraries are included. 
-
-<br>
 
 ## Languages
 
@@ -18,8 +14,6 @@ No installation of any software is needed. All needed libraries are included.
 All of the Codecs, Bitstream and Golomb classes, as well as their testing programs have been writte using C++.
 
 Python is used on exercise 2 in PartB as a way to create the histogram images, since it's a simpler implementation. 
-
-<br>
 
 ## Running
 
