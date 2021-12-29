@@ -30,12 +30,12 @@ int main(){
     std::cout << "Time elapsed for encoding monarch.ppm = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "ms" << std::endl;
 
     begin = std::chrono::steady_clock::now();
-    codec2.losslessJPEG(img1,"outResidual/tulipsRes",5,128);
+    codec2.losslessJPEG(img2,"outResidual/tulipsRes",5,128);
     end = std::chrono::steady_clock::now();
     std::cout << "Time elapsed for encoding tulips.ppm = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "ms" << std::endl;
     
     begin = std::chrono::steady_clock::now();
-    codec3.losslessJPEG(img1,"outResidual/baboonRes",5,128);
+    codec3.losslessJPEG(img3,"outResidual/baboonRes",5,128);
     end = std::chrono::steady_clock::now();
     std::cout << "Time elapsed for encoding baboon.ppm = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "ms" << std::endl;
 

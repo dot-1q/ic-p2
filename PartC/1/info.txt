@@ -1,14 +1,21 @@
-Time elapsed for encoding monarch.ppm = 1837ms
+CONVERSION DONE
 
-Time elapsed for encoding tulips.ppm = 1872ms
+ Closing File 'outResidual/monarchRes '
+Time elapsed for encoding monarch.ppm = 1823ms
 
-Time elapsed for encoding baboon.ppm = 1853ms
+ Closing File 'outResidual/tulipsRes '
+Time elapsed for encoding tulips.ppm = 1900ms
+
+ Closing File 'outResidual/baboonRes '
+Time elapsed for encoding baboon.ppm = 1414ms
 RESIDUALS DONE
 
+ Closing File 'outResidual/monarchRes '
+Time elapsed for decompressing monarch.ppm = 18s
 
-Time elapsed for decompressing monarch.ppm = 17s
+ Closing File 'outResidual/tulipsRes '
+Time elapsed for decompressing tulips.ppm = 17s
 
-Time elapsed for decompressing tulips.ppm = 19s
-
-Time elapsed for decompressing baboon.ppm = 17s
+ Closing File 'outResidual/baboonRes '
+Time elapsed for decompressing baboon.ppm = 11s
 DECOMPRESSING DONE
