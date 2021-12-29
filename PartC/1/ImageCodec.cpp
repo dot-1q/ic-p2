@@ -2,13 +2,13 @@
 #include "../../PartA/1/bitstream.h"
 #include "CImg.h"
 #include "ImageCodec.h"
+#include <math.h>
 #include <string>
 #include <cmath>
 #include <iostream>
 #include <array>
 
 using namespace cimg_library;
-
 ImageCodec::ImageCodec(std::string fileName)
 {
         this->image = fileName;
@@ -87,7 +87,8 @@ void ImageCodec::losslessJPEG(CImg<unsigned char> image, std::string outResFile,
     int height = image.height();
     code = golombEncoder.encodeNumber(height);
     writeColor(bs,code);
-
+    
+    // Predictive mode
     code = golombEncoder.encodeNumber(predictMode);
     writeColor(bs,code);
     
@@ -104,7 +105,6 @@ void ImageCodec::losslessJPEG(CImg<unsigned char> image, std::string outResFile,
             // If it's a border pixel
             if( (row == 0) || (row == height-1) || (column == 0) || (column == width-1) )
             {
-
                 // The data stays the same
                 y = image(column,row,0,0);
                 code = golombEncoder.encodeNumber(y);
@@ -289,8 +289,36 @@ void ImageCodec::decompressImage(std::string residualsFileName, const char* outF
     decompressedImage.save(outFilename);
 }
 
+void ImageCodec::getSNR(CImg<unsigned char> original, CImg<unsigned char> lossyImage)
+{
+    // Raciocínio adaptado do Exercício 10 do Projecto 1
+    double A=0,error=0,esquared=0;
+    int originalPixelSum=0,compPixelSum=0,maxPixelError=0;
+
+    for (int row=0;row<original.height();row++) 
+    {
+        for(int column=0; column < original.width(); column++)
+        {
+            originalPixelSum = (original(column,row,0,0) + original(column,row,0,1) + original(column,row,0,2)) / 3;
+            compPixelSum = (lossyImage(column,row,0,0) + lossyImage(column,row,0,1) + lossyImage(column,row,0,2)) / 3;
+
+            if(originalPixelSum > A) A = pow(originalPixelSum,2);
+            error = error + pow(originalPixelSum-compPixelSum,2);
+
+            if((originalPixelSum-compPixelSum) > maxPixelError) maxPixelError = (originalPixelSum-compPixelSum);
+        }
+    }
+
+    esquared = error/ (original.width() * original.height() * 3);
+    esquared = pow(esquared,2);
+    std::cout << "SNR: " << 10  * log10(A/esquared) << " dB" << std::endl;
+    std::cout << "Emax: " << maxPixelError << std::endl;
+}
+
 void ImageCodec::writeColor(BitStream &stream, std::string &code)
 {
+    // De acordo com o codigo de golomb, escrever
+    // o mesmo no ficheiro de saida
     for(auto &ch : code)
     {
         if(ch=='0') stream.writeBit(0);
@@ -326,6 +354,12 @@ std::string ImageCodec::decodeCode(BitStream &stream, short restBits, int &n)
 
 std::array<int,3> ImageCodec::getPredictedValues(int predictMode,int column,int row, CImg<unsigned char> &image)
 {
+    // Calcular os valores para todos os Modos, e no final escolher
+    // os valores do Modo que queremos
+    // Isto poderia ser feito de forma diferente, para calcularmos
+    // apenas o modo que queremos, em vez de todos, mas o código não
+    // ficava tão perceptivel
+
     int predictors[3][7];
     // Mode 1 -> a
     predictors[0][0] = image(column-1,row,0,0);
@@ -362,11 +396,16 @@ std::array<int,3> ImageCodec::getPredictedValues(int predictMode,int column,int 
     predictors[1][6] = (predictors[1][0] + predictors[1][1]) / 2;
     predictors[2][6] = (predictors[2][0] + predictors[2][1]) / 2;
     
+    // retornar os predictors do modo que queremos
     return std::array<int, 3>() = {predictors[0][predictMode],predictors[1][predictMode],predictors[2][predictMode]};
 }
 
 std::array<int,3> ImageCodec::getLossyPredictedValues(int predictMode,int column,int row, CImg<unsigned char> &image, int Ylb, int Ulb, int Vlb)
 {
+    // Para o modo Lossy, o raciocínio é identico ao do modo Lossless,
+    // apenas temos de ter atenção ao facto de termos de dar shift
+    // pela mesma quantidade de bits que os valores originais
+
     int predictors[3][7];
     // Mode 1 -> a
     predictors[0][0] = image(column-1,row,0,0) >> Ylb;

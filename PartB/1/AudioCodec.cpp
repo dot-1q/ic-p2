@@ -110,6 +110,8 @@ void AudioCodec::compressAudioLossless()
         prev_res2_l = res2_l;
         
         // Multiplicar por 2^15 (32768)
+        // E codificar em codigo de golomb, para seguidamente
+        // escrever no ficheiro
         integer_left = (res3_l) * 32768; 
         code = golombEncoder.encodeNumber(integer_left);
         writeSample(bs, code);
@@ -127,11 +129,15 @@ void AudioCodec::decompressAudio()
     std::cout << "\n ########## Starting Decoding Process ########## " << std::endl;
     Golomb golombDecoder = Golomb(this->m);
     BitStream bs = BitStream(this->residualFileName,'r');
+    // Ficheiro áudio de saída
     AudioFile<float> outFile;
     outFile.setNumChannels(2);
 
+    // Obter todos os bits do ficheiro dos residuais
     int bitsInFile = bs.getByteSize()*8;
     int bitsRead = 0;
+    // Obter o numero de bits que compõe o R dos códigoos
+    // de Golomb
     short restBits = ceil(log(golombDecoder.m)/log(2));
     std::string code;
 
@@ -149,6 +155,9 @@ void AudioCodec::decompressAudio()
     int samplesPerChannel;
     while (bitsRead < (bitsInFile-11)) 
     {
+        // No primeiro ciclo de descompressão, iremos ler no ficheiro, os valores
+        // do  numero de samples e do sample rate que foram codificados em codigo de 
+        // golomb também
         if(headerFlag)
         {
             std::cout << "\n      >>>>> Reading Header <<<<< " << std::endl;
@@ -158,12 +167,17 @@ void AudioCodec::decompressAudio()
             code = decodeCode(bs,restBits,bitsRead);
             sampleRate = golombDecoder.decodeNumber(code);
             std::cout << " Sample Rate: " << sampleRate << std::endl;    
-            headerFlag = 0;
             outFile.setNumSamplesPerChannel(samplesPerChannel);
             outFile.setSampleRate(sampleRate);
+            // Colocar a flag a 0, pois já lemos o header
+            headerFlag = 0;
         }
     
         // LEMBRAR QUE A SAMPLE DO CANAL ESQUERDO É A PRIMEIRA
+        //
+        // Depois de se ler o header, sabemos que as proximas 6 samples
+        // são exatamente iguais às originais e são usadas para o calculo
+        // dos valores originais que se seguem
         if(firstSamplesFlag)
         {
             code = decodeCode(bs, restBits, bitsRead); 
@@ -176,7 +190,7 @@ void AudioCodec::decompressAudio()
             prev_val0_r = (float)(right_channel_sample)/32768;
             outFile.samples[1][0] = prev_val0_r;
 
-        //////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////
             code = decodeCode(bs, restBits, bitsRead); 
             left_channel_sample = golombDecoder.decodeNumber(code);
             prev_val1_l = (float)(left_channel_sample)/32768;
@@ -187,7 +201,7 @@ void AudioCodec::decompressAudio()
             prev_val1_r = (float)(right_channel_sample)/32768;
             outFile.samples[1][1] = prev_val1_r;
 
-    //////////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////
             code = decodeCode(bs, restBits, bitsRead); 
             left_channel_sample = golombDecoder.decodeNumber(code);
             prev_val2_l = (float)(left_channel_sample)/32768;
@@ -225,6 +239,9 @@ void AudioCodec::decompressAudio()
         prev_val1_r = val1_r; 
         prev_val0_r = val0_r; 
 
+        // Colocar o ficheiro de saida o valor original
+        // calculado a partir dos residuais
+
         outFile.samples[0][samplesRead] = val0_l;
         outFile.samples[1][samplesRead] = val0_r;
 
@@ -238,6 +255,8 @@ void AudioCodec::decompressAudio()
 
 void AudioCodec::writeSample(BitStream &stream, std::string &code)
 {
+    // Iterar sobre a string que representa o codigo de Golomb, 
+    // e escrever bit a bit sobre o ficheiro
     for(auto &ch : code)
     {
         if(ch=='0') stream.writeBit(0);
@@ -273,6 +292,9 @@ std::string AudioCodec::decodeCode(BitStream &stream, short restBits, int &n)
 
 void AudioCodec::residualsHistogram()
 {
+    // PROCESSO IDENTICO AO DE COMPRESSAO LOSSLESS
+    // A ÚNICA DIFERENÇA VEM DO FACTO DE GUARDARMOS O VALOR DAS SAMPLES
+    // EM HASHMAPS PARA OBTER O HISTOGRAMA
 
     std::ofstream leftChannelRes("hists/leftChannelResiduals.txt");
     std::ofstream rightChannelRes("hists/rightChannelResiduals.txt");
@@ -397,3 +419,4 @@ void AudioCodec::residualsHistogram()
 
     std::cout << "\n ########## Residuals Saved ########## " << std::endl;
 }
+

@@ -14,6 +14,7 @@ class ImageCodec
         void losslessJPEG(cimg_library::CImg<unsigned char> image, std::string outResFile, int predictMode, int m);
         void lossyJPEG(cimg_library::CImg<unsigned char> image, std::string outResFile, int predictMode, int m, int Ylb, int Ulb, int Vlb);
         void decompressImage(std::string residualsFileName, const char* outFileName, int m); 
+        void getSNR(cimg_library::CImg<unsigned char> original, cimg_library::CImg<unsigned char> lossyImage);
     
     private:
         void writeColor(BitStream &stream, std::string &code);

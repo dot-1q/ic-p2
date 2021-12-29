@@ -68,16 +68,7 @@ string Golomb::getCode(int num, int m){
             codeword = codeword + "0";
     }
 
-    // pass the r value to binary code
     string tmp = "";
-    //if(r < numBits){
-    //    tmp = decToBinary(r);
-    //}
-    //else{
-    //   tmp = decToBinary(r+numBits);
-    //}
-    
-
     tmp = decToBinary(r);
     if (tmp.size() < logCeil ){
         int add = logCeil - tmp.size();

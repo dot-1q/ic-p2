@@ -1,4 +1,4 @@
-#include "../Ex1/bitstream.h"
+#include "../1/bitstream.h"
 #include <iostream>
 
 using namespace std;

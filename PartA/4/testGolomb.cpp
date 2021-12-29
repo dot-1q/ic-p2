@@ -1,5 +1,5 @@
-#include "../Ex3/Golomb.h"
-#include "../Ex1/bitstream.h"
+#include "../3/Golomb.h"
+#include "../1/bitstream.h"
 #include <cmath>
 #include <string>
 #include <iostream>
