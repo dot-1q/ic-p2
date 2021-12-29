@@ -1,0 +1,36 @@
+Samples per channel: 1294188
+Time elapsed for encoding sample01.wav = 6541ms
+
+Samples per channel: 647388
+Time elapsed for encoding sample02.wav = 3248ms
+
+Samples per channel: 882588
+Time elapsed for encoding sample03.wav = 4428ms
+
+Samples per channel: 588588
+Time elapsed for encoding sample04.wav = 2930ms
+
+Samples per channel: 911988
+Time elapsed for encoding sample05.wav = 4045ms
+
+Samples per channel: 1058988
+Time elapsed for encoding sample06.wav = 3745ms
+
+Samples per channel: 941388
+Time elapsed for encoding sample07.wav = 5074ms
+
+------------------------ DECODING -----------------------------------
+
+Time elapsed for decompressing sample01 residuals = 56s
+
+Time elapsed for decompressing sample02 residuals = 29s
+
+Time elapsed for decompressing sample03 residuals = 37s
+
+Time elapsed for decompressing sample04 residuals = 24s
+
+Time elapsed for decompressing sample05 residuals = 38s
+
+Time elapsed for decompressing sample06 residuals = 45s
+
+Time elapsed for decompressing sample07 residuals = 46s

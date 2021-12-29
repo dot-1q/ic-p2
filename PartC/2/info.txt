@@ -1,0 +1,4 @@
+Time elapsed for Lossy 2 bits encoding monarch.ppm = 1371ms
+
+Time elapsed for Lossy 2 bits decompression monarch.ppm = 13s
+

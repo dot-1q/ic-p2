@@ -1,0 +1,14 @@
+Time elapsed for encoding monarch.ppm = 1837ms
+
+Time elapsed for encoding tulips.ppm = 1872ms
+
+Time elapsed for encoding baboon.ppm = 1853ms
+RESIDUALS DONE
+
+
+Time elapsed for decompressing monarch.ppm = 17s
+
+Time elapsed for decompressing tulips.ppm = 19s
+
+Time elapsed for decompressing baboon.ppm = 17s
+DECOMPRESSING DONE

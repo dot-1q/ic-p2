@@ -124,6 +124,19 @@ void AudioCodec::compressAudioLossless()
     bs.close();
 }
 
+void AudioCodec::compressAudioLossy(float lb)
+{
+    for (int i=0;i<this->sourceAudio.getNumSamplesPerChannel();i++)
+    {
+        for(int channel = 0; channel < this->sourceAudio.getNumChannels(); channel++)
+        {
+            this->sourceAudio.samples[channel][i] = this->sourceAudio.samples[channel][i] * 0.3f;
+        }
+    }
+
+    compressAudioLossless();
+}
+
 void AudioCodec::decompressAudio()
 {
     std::cout << "\n ########## Starting Decoding Process ########## " << std::endl;

@@ -1,6 +1,7 @@
 #include "../3/Golomb.h"
 #include "../1/bitstream.h"
 #include <cmath>
+#include <ostream>
 #include <string>
 #include <iostream>
 
@@ -38,11 +39,12 @@ int main(){
 
 
     int nums[16] = {-20,19,3,2,-14,6,3,6,-2,0,-1,1,5,-6,8,-13};
-
+    
+    std::cout << "Numbers written on file" << std::endl;
     std::string codeword;
     for (int i=0;i<16;i++){
         codeword = golombEncoder.encodeNumber(nums[i]); 
-        std::cout << "i: " << nums[i] << " | " << codeword << std::endl;
+        std::cout << "i: [" << nums[i] << "] code: " << codeword << " | " << std::endl;
         
         for(auto &ch : codeword)
         {
@@ -53,17 +55,19 @@ int main(){
 
     bs.close();
 
-    std::cout << "-------------------------------------------" << std::endl;
+    std::cout << "\n-------------------------------------------" << std::endl;
 
     std::cout << "Number (111111010) is: " << golombDecoder.decodeNumber("111111010") << std::endl;
     std::cout << "Number (1111001) is: " << golombDecoder.decodeNumber("1111001") << std::endl;
     std::cout << "Number (11111111011) is: " << golombDecoder.decodeNumber("11111111011") << std::endl;
     std::cout << "Number (1111111111000) is: " << golombDecoder.decodeNumber("1111111111000") << std::endl;
     
+    std::cout << "-------------------------------------------" << std::endl;
 
 
 
 
+    std::cout << "Numbers decoded from file" << std::endl;
     // DECODE PROCESS
     BitStream bd = BitStream("out.txt",'r');
     int bitsInFile = bd.getByteSize() * 8;
@@ -74,7 +78,7 @@ int main(){
     while(bits < bitsInFile)
     {
         code = decodeCode(bd,rbin,bits); 
-        std::cout << golombDecoder.decodeNumber(code) << std::endl;
+        std::cout << golombDecoder.decodeNumber(code) << " | ";
     }
 
     bd.close();
